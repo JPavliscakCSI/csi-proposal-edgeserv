@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<!--
+  HTML Tools
+  Copyright (c) 2025 Joe Pavliscak
+  All rights reserved.
+
+  Permission is granted to use and modify this HTML/CSS/JS for personal
+  or internal business purposes, provided this notice remains intact.
+  Redistribution, resale, or sublicensing of this code or derivative
+  works without explicit written permission from the copyright holder
+  is prohibited.
+
+  For commercial licensing, contact: joe.pavliscak@gmail.com
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdgeServ Web Store &middot; Card Systems</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --canvas:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb;
+  --ink:#16202e; --muted:#67738a; --line:#e1e6ee; --line-strong:#c9d2e0;
+  --primary:#0f766e; --primary-ink:#0b5a54; --primary-soft:#e0f2ee;
+  --monthly:#2563eb; --monthly-soft:#e7efff;
+  --onetime:#b45309; --onetime-soft:#fbf0e0;
+  --cream:#fff8e7; --danger:#dc2626;
+  --readout-bg:#0d1726; --readout-ink:#e8eefb;
+  --shadow:0 1px 2px rgba(18,32,46,.06),0 8px 24px rgba(18,32,46,.07);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+[data-theme="dark"]{
+  --canvas:#0c121c; --surface:#141d2b; --surface-2:#0f1825;
+  --ink:#e8eefb; --muted:#8c99b0; --line:#26344a; --line-strong:#36486a;
+  --primary:#2dd4bf; --primary-ink:#5eead4; --primary-soft:#10322e;
+  --monthly:#7aa2ff; --monthly-soft:#16243f;
+  --onetime:#f0a955; --onetime-soft:#33240f;
+  --cream:#2a2410; --readout-bg:#060c15; --readout-ink:#e8eefb;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;color:inherit}
+
+header.topbar{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1400px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:11px;user-select:none}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#0b5a54);display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;cursor:pointer;transition:transform .1s}
+.brand .mark:active{transform:scale(.92)}
+.brand h1{font-size:16px;margin:0;font-weight:800;letter-spacing:-.2px}
+.brand small{display:block;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tbtn{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.tbtn:hover{border-color:var(--line-strong)}
+.tbtn.dark{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tbtn.dark:hover{opacity:.9}
+
+.editbanner{display:none;background:repeating-linear-gradient(45deg,var(--onetime-soft),var(--onetime-soft) 12px,transparent 12px,transparent 24px);border-bottom:1px solid var(--onetime)}
+body.admin .editbanner{display:block}
+.editbanner .eb-inner{max-width:1400px;margin:0 auto;padding:7px 20px;font-size:12.5px;font-weight:700;color:var(--onetime);display:flex;align-items:center;gap:8px}
+
+.custstrip{max-width:1400px;margin:16px auto 0;padding:0 20px}
+.custcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;display:grid;grid-template-columns:1.6fr 1.2fr .9fr;gap:14px}
+.fld label{display:block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.fld input{width:100%;background:var(--cream);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14.5px;font-weight:600}
+.fld input:focus{outline:2px solid var(--primary);border-color:transparent}
+
+.shell{max-width:1400px;margin:16px auto 120px;padding:0 20px;display:grid;grid-template-columns:1fr 388px;gap:22px;align-items:start}
+
+.catnav{position:sticky;top:70px;background:var(--canvas);padding:8px 0 10px;z-index:20;display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
+.chip{background:var(--surface);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700}
+.chip:hover{color:var(--ink);border-color:var(--line-strong)}
+.chip.active{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.searchwrap{flex:1 1 180px;min-width:160px;position:relative}
+.searchwrap input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 13px 7px 32px;font-size:13px;font-weight:600}
+.searchwrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+
+.catsection{margin-bottom:26px}
+.catsection h2{font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:6px 2px 12px;display:flex;align-items:center;gap:9px}
+.catsection h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
+
+.pcard{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow);transition:border-color .15s}
+.pcard:hover{border-color:var(--line-strong)}
+.pcard.incart{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary),var(--shadow)}
+.pcard .tag{align-self:flex-start;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+.tag.monthly{background:var(--monthly-soft);color:var(--monthly)}
+.tag.onetime{background:var(--onetime-soft);color:var(--onetime)}
+.tag.credit{background:#fde8e8;color:var(--danger)}
+[data-theme="dark"] .tag.credit{background:#3a1414}
+.pcard .pname{font-size:14px;font-weight:700;line-height:1.3;padding-right:24px}
+.pcard .pnote{font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:-4px}
+.pcard .prow{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:4px}
+.pcard .price{font-size:17px;font-weight:800}
+.pcard .price small{font-size:11px;font-weight:700;color:var(--muted)}
+.pcard .warn{font-size:11px;font-weight:800;color:var(--danger);margin-top:-2px}
+.pcard .recnote{font-size:11.5px;font-weight:800;color:var(--monthly);margin-top:-2px}
+.addbtn{background:var(--primary);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+.addbtn:hover{background:var(--primary-ink)}
+.stepper{display:flex;align-items:center;border:1px solid var(--primary);border-radius:9px;overflow:hidden}
+.stepper button{background:var(--primary-soft);color:var(--primary-ink);border:none;width:34px;height:36px;font-size:18px;font-weight:800;line-height:1}
+.stepper button:hover{background:var(--primary);color:#fff}
+.stepper .qv{min-width:34px;text-align:center;font-weight:800;font-size:15px}
+.pencil{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);display:none;place-items:center;color:var(--muted);font-size:13px;padding:0}
+body.admin .pencil{display:grid}
+.pencil:hover{color:var(--ink);border-color:var(--line-strong)}
+
+.cart{position:sticky;top:70px;display:flex;flex-direction:column;gap:14px}
+.readout{background:var(--readout-bg);border-radius:16px;padding:16px 16px 18px;color:var(--readout-ink);box-shadow:var(--shadow)}
+.readout .rtitle{font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:800;color:#8aa0c6;margin-bottom:12px}
+.tally{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-top:1px dashed #2a3a55}
+.tally:first-of-type{border-top:none}
+.tally .tlab{font-size:13px;font-weight:700}
+.tally .tlab span{display:block;font-size:10.5px;font-weight:600;color:#7e90b2;text-transform:uppercase;letter-spacing:.4px}
+.tally .tval{font-size:20px;font-weight:800}
+.tally.monthly .tval{color:#9bbcff}
+.tally.onetime .tval{color:#f4b878}
+.tally .per{font-size:11px;color:#7e90b2;font-weight:600}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.panel-h{padding:11px 14px;font-size:12px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel-h .ph-sum{font-weight:800;color:var(--ink)}
+.litem{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line)}
+.litem:last-child{border-bottom:none}
+.litem .ln{flex:1;font-size:13px;font-weight:600;line-height:1.3}
+.litem .ln em{display:block;font-style:normal;font-size:11px;color:var(--muted);font-weight:600}
+.litem .ln em.warn{color:var(--danger);font-weight:800}
+.litem .lqty{display:flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.litem .lqty button{background:var(--surface-2);border:none;color:var(--ink);width:24px;height:26px;font-size:15px;font-weight:800;line-height:1}
+.litem .lqty button:hover{background:var(--line)}
+.litem .lqty .qv{min-width:24px;text-align:center;font-size:13px;font-weight:800}
+.litem .lp{min-width:76px;text-align:right;font-size:13.5px;font-weight:800}
+.litem .lp.neg{color:var(--danger)}
+.litem.recline{background:var(--monthly-soft)}
+.litem .lqty-static{min-width:44px;text-align:center;font-size:12.5px;font-weight:800;color:var(--monthly)}
+.empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:13px}
+
+.controls{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:12px}
+.ctl label{display:block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.ctl select{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:14px;font-weight:600}
+.raterow{display:flex;gap:8px;align-items:flex-end}
+.rateinput-wrap{position:relative;flex:0 0 92px}
+.rateinput-wrap .pct{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--muted);font-size:13px}
+.rateinput-wrap input{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px 24px 9px 10px;font-size:14px;font-weight:700;text-align:right}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.toggle .tx{font-size:13px;font-weight:700}
+.toggle .tx em{display:block;font-style:normal;font-size:11px;color:var(--muted);font-weight:600}
+.switch{position:relative;width:44px;height:25px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0}
+.switch .sl{position:absolute;inset:0;background:var(--line-strong);border-radius:999px;transition:.18s}
+.switch .sl::before{content:"";position:absolute;width:19px;height:19px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch input:checked + .sl{background:var(--primary)}
+.switch input:checked + .sl::before{transform:translateX(19px)}
+
+.summary{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:6px 14px 12px}
+.srow{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;font-size:13.5px}
+.srow .sl2{color:var(--muted);font-weight:600}
+.srow .sv{font-weight:700}
+.srow .sv.neg{color:var(--danger)}
+.srow.total{border-top:2px solid var(--ink);margin-top:4px;padding-top:10px}
+.srow.total .sl2{color:var(--ink);font-weight:800;font-size:15px}
+.srow.total .sv{font-weight:900;font-size:18px}
+.srow.lease{background:var(--monthly-soft);margin:6px -14px 0;padding:8px 14px}
+.srow.lease .sl2{color:var(--monthly);font-weight:800}
+.srow.lease .sv{color:var(--monthly)}
+
+.exports{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.exports .pdfbtn{grid-column:1/-1;background:var(--primary);color:#fff;border:none;border-radius:11px;padding:13px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}
+.exports .pdfbtn:hover{background:var(--primary-ink)}
+.exports .sbtn{background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px;font-size:13px;font-weight:700}
+.exports .sbtn:hover{border-color:var(--line-strong)}
+.tagline{text-align:center;font-style:italic;font-weight:700;color:var(--primary-ink);font-size:13.5px;padding:4px 0 0}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--surface);padding:11px 18px;border-radius:11px;font-size:14px;font-weight:700;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:80}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.overlay{position:fixed;inset:0;background:rgba(10,16,26,.55);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:90;padding:20px}
+.overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:100%;max-width:440px;max-height:90vh;overflow:auto;animation:pop .16s ease}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-h{padding:16px 18px;border-bottom:1px solid var(--line);font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+.modal-b{padding:18px}
+.mfld{margin-bottom:14px}
+.mfld label{display:block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.mfld input[type=text],.mfld input[type=number],.mfld input[type=password],.mfld select{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:15px;font-weight:600}
+.mfld input:focus,.mfld select:focus{outline:2px solid var(--primary);border-color:transparent}
+.mfld input:disabled{opacity:.6}
+.mcheck{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;cursor:pointer}
+.mcheck input{width:18px;height:18px;accent-color:var(--primary)}
+.mcheck .mc-tx{font-size:13.5px;font-weight:700}
+.mcheck .mc-tx em{display:block;font-style:normal;font-size:11px;color:var(--muted);font-weight:600}
+.mgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mradio{display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:7px;font-size:13px;font-weight:600;cursor:pointer}
+.mradio input{width:17px;height:17px;accent-color:var(--primary)}
+.merr{color:var(--danger);font-size:12.5px;font-weight:700;min-height:16px;margin-top:-4px}
+.modal-f{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.modal-f .spacer{flex:1}
+.mbtn{border-radius:9px;padding:10px 16px;font-size:14px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.mbtn:hover{border-color:var(--line-strong)}
+.mbtn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.mbtn.primary:hover{background:var(--primary-ink)}
+.mbtn.danger{background:transparent;color:var(--danger);border-color:transparent}
+.mbtn.danger:hover{background:#fde8e8}
+[data-theme="dark"] .mbtn.danger:hover{background:#3a1414}
+.linklike{background:none;border:none;color:var(--muted);font-size:12px;font-weight:700;text-decoration:underline;padding:0}
+.linklike:hover{color:var(--ink)}
+
+.mobilebar{display:none}
+@media(max-width:1080px){
+  .shell{grid-template-columns:1fr}
+  .cart{position:fixed;inset:auto 0 0 0;top:auto;z-index:60;background:var(--surface);border-top:1px solid var(--line-strong);border-radius:18px 18px 0 0;max-height:84vh;overflow:auto;padding:16px;box-shadow:0 -8px 30px rgba(0,0,0,.18);transform:translateY(calc(100% - 64px));transition:transform .28s}
+  .cart.open{transform:translateY(0)}
+  .cart::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:40px;height:4px;border-radius:2px;background:var(--line-strong)}
+  .mobilebar{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:6px 2px 14px}
+  .mobilebar .mb-l{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .mobilebar .mb-v{font-size:16px;font-weight:800}
+  .mobilebar .mb-v .mb-mo{color:var(--monthly)}
+  .mobilebar .mb-v .mb-ot{color:var(--onetime)}
+  .mobilebar .mb-cta{background:var(--primary);color:#fff;border-radius:9px;padding:8px 14px;font-weight:800;font-size:13px}
+}
+@media(max-width:560px){ .custcard{grid-template-columns:1fr} .grid{grid-template-columns:1fr} .topbar-inner{flex-wrap:wrap} }
+@media print{body{background:#fff} .topbar,.editbanner,.catnav,.shell>div:first-child,.cart,.mobilebar{display:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="mark" id="logo" title="Card Systems">CS</div>
+      <div>
+        <h1>EdgeServ Web Store</h1>
+        <small>Card Systems &middot; POS Proposal Builder</small>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="tbtn dark" id="addItemBtn" style="display:none">＋ Add item</button>
+      <button class="tbtn" id="pinMgrBtn" style="display:none">🔑 PIN</button>
+      <button class="tbtn" id="lockBtn" style="display:none">🔓 Editing — lock</button>
+      <button class="tbtn" id="themeBtn" title="Toggle theme">🌙 <span>Dark</span></button>
+      <button class="tbtn" id="resetBtn" title="Clear everything">↺ Reset</button>
+    </div>
+  </div>
+</header>
+<div class="editbanner"><div class="eb-inner">✏️ Edit mode — tap the pencil on any item to change price, name, or delete it.</div></div>
+
+<div class="custstrip">
+  <div class="custcard">
+    <div class="fld"><label>Proposal for (merchant / business)</label><input id="custName" placeholder="e.g. Riverside Grill" autocomplete="off"></div>
+    <div class="fld"><label>Prepared by</label><input id="prepBy" placeholder="Your name" autocomplete="off"></div>
+    <div class="fld"><label>Date</label><input id="propDate" type="date"></div>
+  </div>
+</div>
+
+<main class="shell">
+  <div>
+    <nav class="catnav" id="catNav">
+      <div class="searchwrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="search" placeholder="Search products…" autocomplete="off">
+      </div>
+    </nav>
+    <div id="catalog"></div>
+  </div>
+
+  <aside class="cart" id="cart">
+    <div class="mobilebar" id="mobilebar">
+      <div>
+        <div class="mb-l">Your build</div>
+        <div class="mb-v"><span class="mb-mo num" id="mbMonthly">$0</span>/mo &middot; <span class="mb-ot num" id="mbOnetime">$0</span></div>
+      </div>
+      <div class="mb-cta" id="mbCta">View ▲</div>
+    </div>
+
+    <div class="readout">
+      <div class="rtitle">Register</div>
+      <div class="tally monthly">
+        <div class="tlab">Monthly recurring<span>Software &amp; services (SAAS)</span></div>
+        <div><span class="tval num" id="roMonthly">$0.00</span><span class="per">/mo</span></div>
+      </div>
+      <div class="tally onetime">
+        <div class="tlab">One-time<span>Equipment + setup, w/ tax</span></div>
+        <div class="tval num" id="roOnetime">$0.00</div>
+      </div>
+    </div>
+
+    <div class="panel" id="monthlyPanel" style="display:none">
+      <div class="panel-h">Monthly recurring <span class="ph-sum num" id="monthlyHdr">$0.00/mo</span></div>
+      <div id="monthlyList"></div>
+    </div>
+    <div class="panel" id="equipPanel" style="display:none">
+      <div class="panel-h">One-time equipment <span class="ph-sum num" id="equipHdr">$0.00</span></div>
+      <div id="equipList"></div>
+    </div>
+    <div class="panel" id="progPanel" style="display:none">
+      <div class="panel-h">Programming / Inventory / Training <span class="ph-sum num" id="progHdr">$0.00</span></div>
+      <div id="progList"></div>
+    </div>
+    <div class="empty panel" id="emptyMsg">Your build is empty. Add products from the catalog to start a proposal.</div>
+
+    <div class="controls">
+      <div class="ctl">
+        <label>Sales tax — county</label>
+        <div class="raterow">
+          <select id="taxSelect" style="flex:1"></select>
+          <div class="rateinput-wrap"><input id="taxRate" type="number" step="0.01" min="0" value="6.5"><span class="pct">%</span></div>
+        </div>
+      </div>
+      <div class="ctl">
+        <label>Equipment discount <em style="font-style:normal;color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">— iPads excluded</em></label>
+        <select id="discSelect">
+          <option value="0">No discount</option><option value="5">5% off equipment</option>
+          <option value="10">10% off equipment</option><option value="15">15% off equipment</option>
+          <option value="20">20% off equipment</option>
+        </select>
+      </div>
+      <div class="toggle">
+        <div class="tx">Show lease estimate<em>36-mo, equipment only</em></div>
+        <label class="switch"><input type="checkbox" id="leaseToggle"><span class="sl"></span></label>
+      </div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="exports">
+      <button class="pdfbtn" id="pdfBtn">📄 Export proposal PDF</button>
+      <button class="sbtn" id="saveBtn">💾 Save build</button>
+      <button class="sbtn" id="loadBtn">📂 Load build</button>
+    </div>
+    <input type="file" id="loadFile" accept=".json" style="display:none">
+    <div class="tagline">Ask me how we can save you money on your processing fees!</div>
+  </aside>
+</main>
+
+<div class="overlay" id="overlay"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+const DEFAULT_PIN = "5055";
+const LEASE_FACTOR = 0.040891, LEASE_MARKUP = 1.10, LEASE_MONTHS = 36;
+const POS_TIER1 = 49.95, POS_TIER2 = 29.95, POS_TIER_LIMIT = 12;
+
+const DEFAULT_CATALOG = [
+ {cat:"Software & Services", type:"monthly", items:[
+   {n:"Back Office License", p:49.95},
+   {n:"EdgeServ POS Terminal License", p:POS_TIER1, p2:POS_TIER2, tiered:true, note:"First 4 at $49.95 · 5–12 at $29.95 each"},
+   {n:"Unlimited Single Location", p:395},
+   {n:"Payment Integration", p:40},
+   {n:"Digital Signage", p:50},
+   {n:"Gift Card Program", p:40},
+   {n:"Online Ordering (OLO)", p:40},
+   {n:"Text Messaging — High Plan", p:40, note:"1,500 messages / month"},
+   {n:"Text Messaging — Low Plan", p:20, note:"500 messages / month"},
+   {n:"Kitchen Hub — Delivery App Integration", p:69.95, note:"Uber Eats, DoorDash, etc."},
+   {n:"Redundancy Package", p:45, note:"Battery backup + wireless internet failover"},
+   {n:"Merchant Processing Discount (each)", p:-10, credit:true, max:4, note:"Up to 4 — applied to monthly"},
+ ]},
+ {cat:"Back Office Hardware", type:"onetime", items:[
+   {n:"Linux Server — Beelink 32GB", p:506.20},
+   {n:"Monitor (24\")", p:182.09},
+   {n:"Keyboard & Mouse", p:33},
+   {n:"Battery Backup — 6 Outlet", p:94.03},
+   {n:"APC Surge Protector — 11 Outlet/Phone", p:78.09},
+   {n:"7' CAT5 Patch Cable", p:2.80},
+ ]},
+ {cat:"Networking", type:"onetime", items:[
+   {n:"TP-Link AX3000 Dual Band WiFi Router", p:131.85},
+   {n:"TP-Link ER605 Omada Router", p:88.99},
+   {n:"TP-Link ER706W Omada Router", p:186.99},
+   {n:"TP-Link ER706W Omada Router w/ 4G Cellular", p:424.94},
+   {n:"TP-Link ER7212PC Omada VPN Router (PoE)", p:368.99},
+   {n:"TP-Link EAP610 Access Point — Indoor", p:123.99},
+   {n:"TP-Link EAP610 Access Point — Outdoor", p:186.99},
+   {n:"TP-Link SG2008 Omada 8-Port Smart Switch", p:137.99},
+   {n:"TP-Link 8-Port Gigabit Switch", p:30.19},
+   {n:"TP-Link 5-Port Gigabit Switch", p:24.53},
+   {n:"Netgear 24-Port Gigabit Switch", p:109.99},
+   {n:"Netgear 8-Port Gigabit Switch", p:30.19},
+ ]},
+ {cat:"Tablets / iPads", type:"onetime", noDiscount:true, items:[
+   {n:"iPad Pro 12.9\" Wi-Fi (6th Gen)", p:1208.90},
+   {n:"iPad Pro 12.9\" Wi-Fi — Renewed (6th Gen)", p:930.60},
+   {n:"iPad 10.9\" Wi-Fi (10th Gen)", p:383.90},
+   {n:"iPad 10.9\" Wi-Fi — Renewed (10th Gen)", p:306.90},
+   {n:"iPad 10.2\" Wi-Fi (9th Gen)", p:361.90},
+   {n:"iPad 10.2\" Wi-Fi — Renewed (9th Gen)", p:240.90},
+   {n:"iPad Mini 8.3\" Wi-Fi (6th Gen)", p:548.90},
+   {n:"iPad Mini 8.3\" Wi-Fi — Renewed (6th Gen)", p:346.50},
+ ]},
+ {cat:"iPad Enclosures & Cases", type:"onetime", items:[
+   {n:"Enclosure — iPad Pro 12.9\" (6th Gen)", p:270.80, note:"Select a base below"},
+   {n:"Enclosure — iPad 10.9\" (10th Gen)", p:221.47, note:"Select a base below"},
+   {n:"Enclosure — iPad 10.2\" (9th Gen)", p:221.47, note:"Select a base below"},
+   {n:"Vault Base — High Profile", p:117},
+   {n:"Vault Base — Low Profile", p:97.86},
+   {n:"Vault Base — High Profile Flip", p:151.79},
+   {n:"Rugged Case w/ Strap — iPad 10.2\"", p:40},
+   {n:"Rugged Case w/ Strap — iPad Mini 8.3\" (6th Gen)", p:34.39},
+   {n:"Swivel Case — iPad 10.2\"", p:49.95},
+ ]},
+ {cat:"Card Readers & Cash Drawers", type:"onetime", items:[
+   {n:"Pax A35 Card Reader / PIN Pad", p:409.55, note:"Replaces S300"},
+   {n:"Star 16×16 Cash Drawer", p:157.68},
+   {n:"MS 13×13 Cash Drawer", p:110},
+   {n:"iDynamo 6 Card Reader (USB-C)", p:356.68, recurring:15, note:"Requires an iPad"},
+   {n:"nCLOSE Case w/ iDynamo6 EndCap — Mini 8.3\" (6th Gen)", p:470.71, note:"Requires an iPad"},
+ ]},
+ {cat:"Mobile Payment", type:"onetime", items:[
+   {n:"Pax A77", p:288.09},
+   {n:"Pax A920 Pro", p:486.09},
+   {n:"Pax A920 Pro Charging Base", p:171.60, note:"Not compatible with rugged case"},
+   {n:"Pax A920 Pro Rugged Case", p:80.60},
+   {n:"Pax Elys Tablet", p:615.38},
+   {n:"Pax Elys Individual Stand", p:84.80},
+ ]},
+ {cat:"Counter Service", type:"onetime", items:[
+   {n:"Aries Counter Service Card Reader", p:828.20},
+   {n:"Aries 8 Stand — Square Plate + Glue Pad (Low Contour)", p:131},
+   {n:"Aries 8 Stand — Multi-Mount Base Plate (Low Contour)", p:140.80},
+   {n:"Tera Pro Wireless Bluetooth Barcode Scanner w/ Cradle", p:128.06},
+ ]},
+ {cat:"Receipt & Kitchen Printers", type:"onetime", items:[
+   {n:"Star Thermal Receipt Printer", p:392.58},
+   {n:"Bixolon Thermal Receipt Printer", p:291.34},
+   {n:"Bixolon Thermal Receipt Printer (Front Feed)", p:296.41},
+   {n:"Star Impact Printer (Kitchen)", p:452.16},
+   {n:"Bixolon Impact Printer (Kitchen)", p:345.13},
+   {n:"Epson Impact Printer (Kitchen)", p:504.78},
+ ]},
+ {cat:"Kitchen Display (KDS)", type:"onetime", items:[
+   {n:"Chef Tab App License", p:499, note:"For use with existing Android device"},
+   {n:"Chef Tab X — Touchscreen", p:799, note:"Monitor not included"},
+   {n:"Chef Tab X — Bump Bar", p:999, note:"Monitor not included"},
+   {n:"CT Touch Monitor 21.5\"", p:379},
+   {n:"CT LED LCD Monitor 21.5\"", p:199},
+   {n:"Monitor Wall Mount", p:69},
+   {n:"Bump Bar", p:299},
+   {n:"Bump Bar Mount", p:59},
+ ]},
+ {cat:"Chargers & Adapters", type:"onetime", items:[
+   {n:"iPad Charger — Apple MFi w/ 6' USB-C", p:26},
+   {n:"iPad Charger — Apple MFi w/ 10' USB-C", p:31.59},
+   {n:"Ethernet + Power Adapter (USB-C)", p:45.31},
+ ]},
+ {cat:"Programming / Inventory / Training", type:"prog", items:[
+   {n:"Programming / Inventory / Training", p:1495, note:"Not included in lease"},
+   {n:"Prog / Inv / Train Discount", p:-500, credit:true, note:"Standard concession"},
+ ]},
+];
+
+const TAX_PRESETS = [
+ {n:"Lee County — Cape Coral, Fort Myers, Sanibel", r:6.5},
+ {n:"Collier County — Naples, Marco Island", r:6.0},
+ {n:"Charlotte County — Punta Gorda, Port Charlotte", r:7.0},
+ {n:"Hendry County — LaBelle, Clewiston", r:7.5},
+ {n:"Glades County — Moore Haven", r:7.0},
+ {n:"Custom rate…", r:null},
+];
+
+function seedCatalog(){
+  return DEFAULT_CATALOG.map((sec,si)=>({cat:sec.cat, items:sec.items.map((it,ii)=>({
+    id:"i_"+si+"_"+ii, name:it.n, price:it.p, p2:(it.p2!=null?it.p2:null),
+    type:sec.type, credit:!!it.credit, noDiscount:!!sec.noDiscount,
+    max:it.max||null, note:it.note||"", tiered:!!it.tiered, recurring:(it.recurring!=null?it.recurring:0), recFirstOnly:!!it.recFirstOnly
+  }))}));
+}
+
+const LS = "edgeserv_webstore_v1";
+let state = {cust:"",prep:"",date:"",cart:{},catalog:null,tax:0,taxRate:6.5,disc:0,lease:false,theme:"light",pin:DEFAULT_PIN};
+let adminUnlocked = false;
+function loadState(){ try{const s=JSON.parse(localStorage.getItem(LS)); if(s) state=Object.assign(state,s);}catch(e){} }
+function saveState(){ try{localStorage.setItem(LS, JSON.stringify(state));}catch(e){} }
+loadState();
+if(!state.pin) state.pin = DEFAULT_PIN;
+if(!state.catalog || !Array.isArray(state.catalog) || !state.catalog.length){ state.catalog = seedCatalog(); }
+if(Array.isArray(state.custom) && state.custom.length){
+  let misc = state.catalog.find(s=>s.cat==="Custom items");
+  if(!misc){ misc={cat:"Custom items",items:[]}; state.catalog.push(misc); }
+  state.custom.forEach(c=>misc.items.push({id:c.id,name:c.name,price:c.price,p2:null,type:c.type||"onetime",credit:!!c.credit,noDiscount:false,max:null,note:c.note||"",tiered:false}));
+  delete state.custom;
+}
+
+function getProduct(id){ for(const s of state.catalog){ const f=s.items.find(i=>i.id===id); if(f) return f; } return null; }
+function findSection(id){ return state.catalog.find(s=>s.items.some(i=>i.id===id)); }
+const money = n => (n<0?"-$":"$")+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const money0 = n => (n<0?"-$":"$")+Math.abs(Math.round(n)).toLocaleString("en-US");
+function extPrice(p,q){
+  if(p.tiered){ const t1=p.price, t2=(p.p2!=null?p.p2:POS_TIER2); return Math.min(q,4)*t1 + Math.max(0,q-4)*t2; }
+  return p.price*q;
+}
+function overLimit(p,q){ return p.tiered && q>POS_TIER_LIMIT; }
+function recAmount(p,q){ if(!(p.recurring>0)||p.type==="monthly") return 0; return p.recFirstOnly ? p.recurring : p.recurring*q; }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ---------------- CATALOG RENDER ---------------- */
+let activeCat="all", searchTerm="";
+function renderNav(){
+  const nav=document.getElementById("catNav");
+  [...nav.querySelectorAll(".chip")].forEach(c=>c.remove());
+  ["all",...state.catalog.map(s=>s.cat)].forEach(c=>{
+    const b=document.createElement("button");
+    b.className="chip"+(activeCat===c?" active":"");
+    b.textContent=c==="all"?"All products":c;
+    b.onclick=()=>{activeCat=c;searchTerm="";document.getElementById("search").value="";renderNav();renderCatalog();window.scrollTo({top:0,behavior:"smooth"});};
+    nav.appendChild(b);
+  });
+}
+function renderCatalog(){
+  const root=document.getElementById("catalog"); root.innerHTML="";
+  const term=searchTerm.trim().toLowerCase();
+  state.catalog.forEach(sec=>{
+    if(activeCat!=="all" && sec.cat!==activeCat && !term) return;
+    const matches=sec.items.filter(it=>!term || it.name.toLowerCase().includes(term) || (it.note||"").toLowerCase().includes(term));
+    if(!matches.length) return;
+    const wrap=document.createElement("section"); wrap.className="catsection";
+    const h=document.createElement("h2"); h.textContent=sec.cat; wrap.appendChild(h);
+    const grid=document.createElement("div"); grid.className="grid";
+    matches.forEach(it=>grid.appendChild(makeCard(it)));
+    wrap.appendChild(grid); root.appendChild(wrap);
+  });
+  if(!root.children.length){ root.innerHTML='<div class="empty panel" style="margin-top:8px">No products match your search.</div>'; }
+}
+function makeCard(prod){
+  const q=state.cart[prod.id]||0, inCart=q>0;
+  const card=document.createElement("div"); card.className="pcard"+(inCart?" incart":"");
+  const tagClass=prod.credit?"credit":(prod.type==="monthly"?"monthly":"onetime");
+  const tagText=prod.credit?"Credit":(prod.type==="monthly"?"Monthly":"One-time");
+  const unitPrice=(prod.tiered && q>4)?(prod.p2!=null?prod.p2:POS_TIER2):prod.price;
+  const priceSuffix=prod.type==="monthly"?(prod.tiered?'<small>/mo each</small>':'<small>/mo</small>'):'';
+  card.innerHTML=`
+    <button class="pencil" title="Edit item">✎</button>
+    <span class="tag ${tagClass}">${tagText}</span>
+    <div class="pname">${esc(prod.name)}</div>
+    ${prod.note?`<div class="pnote">${esc(prod.note)}</div>`:""}
+    ${overLimit(prod,q)?`<div class="warn">Unlimited license recommended</div>`:""}
+    ${(prod.recurring>0 && prod.type!=="monthly")?`<div class="recnote">+ ${money(prod.recurring)}/mo recurring${prod.recFirstOnly?" (flat)":""}</div>`:""}
+    <div class="prow">
+      <div class="price num">${money(unitPrice)}${priceSuffix}</div>
+      <div class="actionslot"></div>
+    </div>`;
+  card.querySelector(".pencil").onclick=e=>{e.stopPropagation();openEditModal(prod.id);};
+  const slot=card.querySelector(".actionslot");
+  slot.appendChild(inCart?makeStepper(prod):makeAdd(prod));
+  return card;
+}
+function makeAdd(prod){ const b=document.createElement("button"); b.className="addbtn"; b.textContent="Add"; b.onclick=()=>setQty(prod.id,1); return b; }
+function makeStepper(prod){
+  const s=document.createElement("div"); s.className="stepper";
+  const m=document.createElement("button"); m.textContent="–"; m.onclick=()=>setQty(prod.id,(state.cart[prod.id]||0)-1);
+  const v=document.createElement("div"); v.className="qv num"; v.textContent=state.cart[prod.id]||0;
+  const p=document.createElement("button"); p.textContent="+"; p.onclick=()=>setQty(prod.id,(state.cart[prod.id]||0)+1);
+  s.append(m,v,p); return s;
+}
+function setQty(id,q){
+  const prod=getProduct(id); if(!prod) return;
+  if(prod.max) q=Math.min(q,prod.max);
+  q=Math.max(0,q);
+  if(q===0) delete state.cart[id]; else state.cart[id]=q;
+  saveState(); renderCatalog(); renderCart();
+}
+
+/* ---------------- CART ---------------- */
+function computed(){
+  let monthly=0,equipSub=0,equipDiscount=0,progTotal=0;
+  const discPct=(+state.disc)/100;
+  Object.entries(state.cart).forEach(([id,q])=>{
+    const p=getProduct(id); if(!p) return;
+    const ext=extPrice(p,q);
+    if(p.type==="monthly") monthly+=ext;
+    else if(p.type==="prog") progTotal+=ext;
+    else { equipSub+=ext; if(discPct>0 && !p.noDiscount && p.price>0) equipDiscount+=ext*discPct; }
+    if(p.type!=="monthly" && p.recurring>0) monthly+=recAmount(p,q);
+  });
+  const taxedBase=equipSub-equipDiscount;
+  const tax=taxedBase*(+state.taxRate/100);
+  const equipTotal=taxedBase+tax;
+  const lease=(taxedBase*LEASE_MARKUP)*LEASE_FACTOR;
+  return {monthly,equipSub,equipDiscount,taxedBase,tax,equipTotal,progTotal,lease,oneTimeGrand:equipTotal+progTotal};
+}
+function lineRow(id){
+  const p=getProduct(id),q=state.cart[id],ext=extPrice(p,q);
+  const row=document.createElement("div"); row.className="litem";
+  let sub=p.note?`<em>${esc(p.note)}</em>`:"";
+  if(overLimit(p,q)) sub+=`<em class="warn">Unlimited license recommended</em>`;
+  row.innerHTML=`<div class="ln">${esc(p.name)}${sub}</div>`;
+  const qty=document.createElement("div"); qty.className="lqty";
+  const m=document.createElement("button"); m.textContent="–"; m.onclick=()=>setQty(id,q-1);
+  const v=document.createElement("div"); v.className="qv num"; v.textContent=q;
+  const pl=document.createElement("button"); pl.textContent="+"; pl.onclick=()=>setQty(id,q+1);
+  qty.append(m,v,pl);
+  const price=document.createElement("div"); price.className="lp num"+(ext<0?" neg":""); price.textContent=money(ext);
+  row.append(qty,price); return row;
+}
+function recRow(p,q,ext){
+  const row=document.createElement("div"); row.className="litem recline";
+  const flat=p.recFirstOnly;
+  row.innerHTML=`<div class="ln">${esc(p.name)}<em>Monthly fee · ${money(p.recurring)}/mo${flat?" (one charge)":" each"}</em></div>
+    <div class="lqty-static num">${flat?"flat":"&times; "+q}</div>
+    <div class="lp num">${money(ext)}</div>`;
+  return row;
+}
+function renderMonthly(){
+  const panel=document.getElementById("monthlyPanel"),list=document.getElementById("monthlyList");
+  list.innerHTML=""; let sum=0,any=false;
+  Object.keys(state.cart).forEach(id=>{const p=getProduct(id);if(p&&p.type==="monthly"){any=true;sum+=extPrice(p,state.cart[id]);list.appendChild(lineRow(id));}});
+  Object.keys(state.cart).forEach(id=>{const p=getProduct(id),q=state.cart[id];if(p&&p.type!=="monthly"&&p.recurring>0){any=true;const ext=recAmount(p,q);sum+=ext;list.appendChild(recRow(p,q,ext));}});
+  panel.style.display=any?"":"none";
+  return sum;
+}
+function fillList(panelId,listId,filterFn){
+  const ids=Object.keys(state.cart).filter(id=>{const p=getProduct(id);return p&&filterFn(p);});
+  const panel=document.getElementById(panelId),list=document.getElementById(listId);
+  if(!ids.length){ panel.style.display="none"; return 0; }
+  panel.style.display=""; list.innerHTML="";
+  let sum=0; ids.forEach(id=>{const p=getProduct(id);sum+=extPrice(p,state.cart[id]);list.appendChild(lineRow(id));});
+  return sum;
+}
+function renderCart(){
+  const c=computed();
+  document.getElementById("roMonthly").textContent=money(c.monthly);
+  document.getElementById("roOnetime").textContent=money(c.oneTimeGrand);
+  document.getElementById("mbMonthly").textContent=money0(c.monthly);
+  document.getElementById("mbOnetime").textContent=money0(c.oneTimeGrand);
+  const mSum=renderMonthly();
+  document.getElementById("monthlyHdr").textContent=money(mSum)+"/mo";
+  fillList("equipPanel","equipList",p=>p.type==="onetime");
+  document.getElementById("equipHdr").textContent=money(c.equipSub);
+  const pSum=fillList("progPanel","progList",p=>p.type==="prog");
+  document.getElementById("progHdr").textContent=money(pSum);
+  document.getElementById("emptyMsg").style.display=Object.keys(state.cart).length?"none":"";
+
+  const any=Object.keys(state.cart).length>0; let html="";
+  if(c.monthly!==0) html+=row("Monthly recurring",money(c.monthly)+"/mo");
+  if(c.equipSub!==0){
+    html+=row("Equipment subtotal",money(c.equipSub));
+    if(c.equipDiscount>0) html+=row(`Equipment discount (${state.disc}%)`,money(-c.equipDiscount),true);
+    html+=row(`Sales tax (${(+state.taxRate).toFixed(2)}%)`,money(c.tax));
+    html+=rowTotal("Equipment total",money(c.equipTotal));
+  }
+  if(c.progTotal!==0) html+=row("Programming / Inventory / Training",money(c.progTotal));
+  if(state.lease && c.taxedBase>0) html+=`<div class="srow lease"><div class="sl2">Est. lease — ${LEASE_MONTHS} mo</div><div class="sv num">${money(c.lease)}/mo</div></div>`;
+  if(c.oneTimeGrand!==0) html+=rowTotal("One-time total",money(c.oneTimeGrand));
+  document.getElementById("summary").innerHTML=any?html:'<div style="padding:14px 0;text-align:center;color:var(--muted);font-size:13px">Totals appear here as you build.</div>';
+  saveState();
+}
+function row(l,v,neg){ return `<div class="srow"><div class="sl2">${l}</div><div class="sv num${neg?' neg':''}">${v}</div></div>`; }
+function rowTotal(l,v){ return `<div class="srow total"><div class="sl2">${l}</div><div class="sv num">${v}</div></div>`; }
+
+/* ---------------- ADMIN / MODALS ---------------- */
+const overlay=document.getElementById("overlay");
+function openModal(html){ overlay.innerHTML=`<div class="modal">${html}</div>`; overlay.classList.add("show"); }
+function closeModal(){ overlay.classList.remove("show"); overlay.innerHTML=""; }
+overlay.onclick=e=>{ if(e.target===overlay) closeModal(); };
+
+let logoClicks=0,logoTimer=null;
+document.getElementById("logo").onclick=()=>{
+  if(adminUnlocked) return;
+  logoClicks++; clearTimeout(logoTimer); logoTimer=setTimeout(()=>logoClicks=0,1200);
+  if(logoClicks>=5){ logoClicks=0; openPinModal(); }
+};
+function openPinModal(){
+  openModal(`
+    <div class="modal-h">🔒 Enter edit PIN</div>
+    <div class="modal-b">
+      <div class="mfld"><label>PIN</label><input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="••••••"></div>
+      <div class="merr" id="pinErr"></div>
+    </div>
+    <div class="modal-f"><button class="mbtn" id="pinCancel">Cancel</button><button class="mbtn primary" id="pinOk">Unlock</button></div>`);
+  const inp=document.getElementById("pinInput"); inp.focus();
+  const submit=()=>{ if(inp.value===state.pin){ adminUnlocked=true; document.body.classList.add("admin"); setAdminUI(true); closeModal(); toast("Edit mode unlocked"); }
+    else{ document.getElementById("pinErr").textContent="Incorrect PIN."; inp.value=""; inp.focus(); } };
+  inp.onkeydown=e=>{ if(e.key==="Enter") submit(); };
+  document.getElementById("pinOk").onclick=submit;
+  document.getElementById("pinCancel").onclick=closeModal;
+}
+function setAdminUI(on){
+  ["addItemBtn","pinMgrBtn","lockBtn"].forEach(id=>document.getElementById(id).style.display=on?"":"none");
+}
+document.getElementById("lockBtn").onclick=()=>{
+  adminUnlocked=false; document.body.classList.remove("admin");
+  setAdminUI(false);
+  toast("Edit mode locked");
+};
+document.getElementById("pinMgrBtn").onclick=openPinManageModal;
+function openPinManageModal(){
+  openModal(`
+    <div class="modal-h">🔑 Manage edit PIN</div>
+    <div class="modal-b">
+      <div class="mfld"><label>Current PIN</label><input type="password" id="pmCur" inputmode="numeric" autocomplete="off" placeholder="••••••"></div>
+      <div class="mfld"><label>New PIN</label><input type="password" id="pmNew" inputmode="numeric" autocomplete="off" placeholder="At least 4 characters"></div>
+      <div class="mfld"><label>Confirm new PIN</label><input type="password" id="pmConf" inputmode="numeric" autocomplete="off" placeholder="Re-enter new PIN"></div>
+      <div class="merr" id="pmErr"></div>
+    </div>
+    <div class="modal-f"><div class="spacer"></div><button class="mbtn" id="pmCancel">Cancel</button><button class="mbtn primary" id="pmSave">Update PIN</button></div>`);
+  const cur=document.getElementById("pmCur"), nw=document.getElementById("pmNew"), cf=document.getElementById("pmConf"), err=document.getElementById("pmErr");
+  cur.focus();
+  const save=()=>{
+    if(cur.value!==state.pin){ err.textContent="Current PIN is incorrect."; cur.value=""; cur.focus(); return; }
+    if(nw.value.length<4){ err.textContent="New PIN must be at least 4 characters."; return; }
+    if(nw.value!==cf.value){ err.textContent="New PIN entries don't match."; cf.value=""; cf.focus(); return; }
+    state.pin=nw.value; saveState(); closeModal(); toast("PIN updated");
+  };
+  cf.onkeydown=e=>{ if(e.key==="Enter") save(); };
+  document.getElementById("pmSave").onclick=save;
+  document.getElementById("pmCancel").onclick=closeModal;
+}
+
+function catOptions(selected){
+  return state.catalog.map(s=>`<option value="${esc(s.cat)}"${s.cat===selected?" selected":""}>${esc(s.cat)}</option>`).join("")
+    + `<option value="__new__">➕ New category…</option>`;
+}
+document.getElementById("addItemBtn").onclick=()=>openItemModal(null);
+function openEditModal(id){ openItemModal(id); }
+
+function openItemModal(id){
+  const editing=!!id; const p=editing?getProduct(id):null; const sec=editing?findSection(id):null;
+  const isMonthly=editing?(p.type==="monthly"):false;
+  const isProg=editing&&p.type==="prog";
+  openModal(`
+    <div class="modal-h">${editing?"✎ Edit item":"＋ Add item"}</div>
+    <div class="modal-b">
+      <div class="mfld"><label>Name</label><input type="text" id="iName" value="${editing?esc(p.name):""}" placeholder="Item name"></div>
+      ${p&&p.tiered?`
+        <div class="mgrid2">
+          <div class="mfld"><label>Price — first 4</label><input type="number" step="0.01" id="iPrice" value="${p.price}"></div>
+          <div class="mfld"><label>Price — each after 4</label><input type="number" step="0.01" id="iPrice2" value="${p.p2!=null?p.p2:POS_TIER2}"></div>
+        </div>`
+      :`<div class="mfld"><label>Price (negative = credit)</label><input type="number" step="0.01" id="iPrice" value="${editing?p.price:""}" placeholder="0.00"></div>`}
+      ${editing?`<div class="mfld"><label>Category</label><input type="text" value="${esc(sec.cat)}" disabled></div>`
+      :`<div class="mfld"><label>Category</label><select id="iCat">${catOptions(activeCat!=="all"?activeCat:null)}</select></div>
+        <div class="mfld" id="newCatWrap" style="display:none"><label>New category name</label><input type="text" id="iNewCat" placeholder="e.g. Scales & Scanners"></div>`}
+      <div class="mfld"><label>Note (optional)</label><input type="text" id="iNote" value="${editing?esc(p.note):""}" placeholder="Shown under the item"></div>
+      ${isProg?"":`<div class="mfld"><label class="mcheck"><input type="checkbox" id="iMonthly" ${isMonthly?"checked":""}><span class="mc-tx">Monthly service<em>Recurring SAAS, not taxed. Leave off for one-time equipment.</em></span></label></div>`}
+      <div id="recBlock"${isMonthly?' style="display:none"':''}>
+        <div class="mfld"><label class="mcheck"><input type="checkbox" id="iRecChk" ${(editing&&p.recurring>0)?"checked":""}><span class="mc-tx">Recurring fees?<em>Adds a monthly SAAS charge on top of the one-time price.</em></span></label></div>
+        <div class="mfld"><label>Recurring monthly amount</label><input type="number" step="0.01" id="iRec" value="${(editing&&p.recurring>0)?p.recurring:""}" placeholder="0.00"></div>
+        <div class="mfld" id="recModeWrap">
+          <label>How is it billed?</label>
+          <label class="mradio"><input type="radio" name="recMode" value="unit" ${(editing&&p.recFirstOnly)?"":"checked"}><span>Per unit &mdash; adds for every one added</span></label>
+          <label class="mradio"><input type="radio" name="recMode" value="first" ${(editing&&p.recFirstOnly)?"checked":""}><span>First only &mdash; one charge no matter the quantity</span></label>
+        </div>
+      </div>
+      <div class="merr" id="iErr"></div>
+    </div>
+    <div class="modal-f">
+      ${editing?`<button class="mbtn danger" id="iDelete">Delete</button>`:`<button class="linklike" id="iRestore">Restore default catalog</button>`}
+      <div class="spacer"></div>
+      <button class="mbtn" id="iCancel">Cancel</button>
+      <button class="mbtn primary" id="iSave">${editing?"Save changes":"Add item"}</button>
+    </div>`);
+
+  if(!editing){
+    const csel=document.getElementById("iCat"), wrap=document.getElementById("newCatWrap");
+    csel.onchange=()=>{ wrap.style.display=csel.value==="__new__"?"":"none"; };
+    document.getElementById("iRestore").onclick=()=>{
+      if(confirm("Restore all items and prices to defaults? Your price edits and added items will be lost.")){
+        state.catalog=seedCatalog(); state.cart={}; saveState(); closeModal(); renderNav(); renderCatalog(); renderCart(); toast("Catalog restored to defaults");
+      }
+    };
+  }
+  document.getElementById("iCancel").onclick=closeModal;
+  const recChk=document.getElementById("iRecChk"), recInp=document.getElementById("iRec");
+  const syncRec=()=>{ recInp.disabled=!recChk.checked; recInp.style.opacity=recChk.checked?"1":".5"; document.getElementById("recModeWrap").style.display=recChk.checked?"":"none"; };
+  recChk.onchange=syncRec; syncRec();
+  const monthlyChk=document.getElementById("iMonthly");
+  if(monthlyChk){ monthlyChk.onchange=()=>{ document.getElementById("recBlock").style.display=monthlyChk.checked?"none":""; }; }
+  if(editing){
+    document.getElementById("iDelete").onclick=()=>{
+      if(confirm(`Delete "${p.name}"? This removes it from the catalog.`)){
+        sec.items=sec.items.filter(i=>i.id!==id); delete state.cart[id];
+        if(!sec.items.length) state.catalog=state.catalog.filter(s=>s!==sec);
+        saveState(); closeModal(); renderNav(); renderCatalog(); renderCart(); toast("Item deleted");
+      }
+    };
+  }
+  document.getElementById("iSave").onclick=()=>{
+    const name=document.getElementById("iName").value.trim();
+    const price=parseFloat(document.getElementById("iPrice").value);
+    const note=document.getElementById("iNote").value.trim();
+    const err=document.getElementById("iErr");
+    if(!name){ err.textContent="Please enter a name."; return; }
+    if(isNaN(price)){ err.textContent="Please enter a valid price."; return; }
+    if(editing){
+      p.name=name; p.price=price; p.note=note;
+      if(p.tiered){ const p2=parseFloat(document.getElementById("iPrice2").value); if(!isNaN(p2)) p.p2=p2; }
+      if(!isProg){ p.type=document.getElementById("iMonthly").checked?"monthly":"onetime"; }
+      const recOnE = p.type!=="monthly" && document.getElementById("iRecChk").checked;
+      p.recurring = recOnE ? (parseFloat(document.getElementById("iRec").value)||0) : 0;
+      p.recFirstOnly = recOnE ? (document.querySelector('input[name="recMode"]:checked').value==="first") : false;
+      p.credit=price<0;
+    } else {
+      let catName=document.getElementById("iCat").value;
+      if(catName==="__new__"){ catName=document.getElementById("iNewCat").value.trim(); if(!catName){ err.textContent="Name the new category."; return; } }
+      let sec2=state.catalog.find(s=>s.cat===catName);
+      if(!sec2){ sec2={cat:catName,items:[]}; state.catalog.push(sec2); }
+      const monthly=document.getElementById("iMonthly").checked;
+      const recOn = !monthly && document.getElementById("iRecChk").checked;
+      const rec = recOn ? (parseFloat(document.getElementById("iRec").value)||0) : 0;
+      const recFirst = recOn ? (document.querySelector('input[name="recMode"]:checked').value==="first") : false;
+      sec2.items.push({id:"x"+Date.now()+Math.floor(Math.random()*999),name,price,p2:null,type:monthly?"monthly":"onetime",credit:price<0,noDiscount:false,max:null,note,tiered:false,recurring:rec,recFirstOnly:recFirst});
+    }
+    saveState(); closeModal(); renderNav(); renderCatalog(); renderCart(); toast(editing?"Item updated":"Item added");
+  };
+}
+
+/* ---------------- CONTROLS ---------------- */
+function buildTaxSelect(){
+  const sel=document.getElementById("taxSelect"); sel.innerHTML="";
+  TAX_PRESETS.forEach((t,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=t.n+(t.r!==null?` (${t.r}%)`:""); sel.appendChild(o); });
+  sel.value=state.tax; document.getElementById("taxRate").value=state.taxRate;
+  sel.onchange=()=>{ state.tax=+sel.value; const r=TAX_PRESETS[state.tax].r; if(r!==null){ state.taxRate=r; document.getElementById("taxRate").value=r; } renderCart(); };
+  document.getElementById("taxRate").oninput=e=>{ state.taxRate=parseFloat(e.target.value)||0; renderCart(); };
+}
+document.getElementById("discSelect").onchange=e=>{ state.disc=+e.target.value; renderCart(); };
+document.getElementById("leaseToggle").onchange=e=>{ state.lease=e.target.checked; renderCart(); };
+document.getElementById("search").oninput=e=>{ searchTerm=e.target.value; renderCatalog(); };
+document.getElementById("custName").oninput=e=>{state.cust=e.target.value;saveState();};
+document.getElementById("prepBy").oninput=e=>{state.prep=e.target.value;saveState();};
+document.getElementById("propDate").onchange=e=>{state.date=e.target.value;saveState();};
+
+function applyTheme(){ document.documentElement.setAttribute("data-theme",state.theme);
+  document.getElementById("themeBtn").innerHTML=state.theme==="dark"?'☀️ <span>Light</span>':'🌙 <span>Dark</span>'; }
+document.getElementById("themeBtn").onclick=()=>{ state.theme=state.theme==="dark"?"light":"dark"; applyTheme(); saveState(); };
+
+document.getElementById("resetBtn").onclick=()=>{
+  if(!confirm("Clear the current build, customer info, and tax/discount settings? (Your catalog edits are kept.)")) return;
+  state.cust="";state.prep="";state.date="";state.cart={};state.tax=0;state.taxRate=6.5;state.disc=0;state.lease=false;
+  saveState(); hydrate(); toast("Cleared");
+};
+document.getElementById("mobilebar").onclick=()=>{ const c=document.getElementById("cart"); c.classList.toggle("open");
+  document.getElementById("mbCta").textContent=c.classList.contains("open")?"Close ▼":"View ▲"; };
+
+document.getElementById("saveBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=(state.cust?state.cust.replace(/[^\w]+/g,"_"):"EdgeServ")+"_build.json"; a.click(); toast("Build saved");
+};
+document.getElementById("loadBtn").onclick=()=>document.getElementById("loadFile").click();
+document.getElementById("loadFile").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ try{ const s=JSON.parse(r.result); state=Object.assign({cart:{},catalog:null},s);
+    if(!state.catalog||!state.catalog.length) state.catalog=seedCatalog(); if(!state.pin) state.pin=DEFAULT_PIN; saveState(); hydrate(); toast("Build loaded"); }
+    catch(err){ toast("Could not read that file"); } };
+  r.readAsText(f); e.target.value="";
+};
+
+let toastT; function toast(m){ const t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
+
+/* ---------------- PDF ---------------- */
+document.getElementById("pdfBtn").onclick=()=>{ try{ exportPDF(); }catch(err){ console.error(err); toast("PDF export failed — see console"); } };
+function exportPDF(){
+  if(!Object.keys(state.cart).length){ toast("Add some products first"); return; }
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:"pt",format:"letter"});
+  const W=doc.internal.pageSize.getWidth(), M=42;
+  const teal=[15,118,110],ink=[22,32,46],muted=[103,115,138],blue=[37,99,235],amber=[180,83,9];
+  const c=computed();
+  const dateStr=state.date?new Date(state.date+"T00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}):new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+  let y=98;
+  doc.setFillColor(...ink); doc.rect(0,0,W,72,"F");
+  doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(19); doc.text("Card Systems",M,34);
+  doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(180,200,230); doc.text("EdgeServ Point-of-Sale Proposal",M,52);
+  doc.setFontSize(9); doc.setTextColor(170,185,210); doc.text(dateStr,W-M,34,{align:"right"});
+  if(state.prep) doc.text("Prepared by "+state.prep,W-M,50,{align:"right"});
+  doc.setTextColor(...muted); doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.text("PROPOSAL FOR",M,y);
+  doc.setTextColor(...ink); doc.setFontSize(15); doc.text(state.cust||"—",M,y+18); y+=42;
+
+  const lines=ff=>Object.keys(state.cart).filter(id=>{const p=getProduct(id);return p&&ff(p);})
+    .map(id=>{const p=getProduct(id),q=state.cart[id];return [p.name,String(q),p.tiered?"tiered":fmt(p.price),fmt(extPrice(p,q))];});
+
+  function table(title,rows,hc,foot){
+    if(!rows.length) return;
+    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...hc); doc.text(title,M,y); y+=6;
+    doc.autoTable({ startY:y, margin:{left:M,right:M}, head:[["Item","Qty","Unit","Amount"]], body:rows, foot:foot||[], theme:"plain",
+      styles:{font:"helvetica",fontSize:9.5,cellPadding:{top:5,bottom:5,left:6,right:6},textColor:ink,lineColor:[225,230,238],lineWidth:.5},
+      headStyles:{fillColor:[246,248,251],textColor:muted,fontStyle:"bold",fontSize:8.5,lineWidth:{bottom:1},lineColor:hc},
+      footStyles:{fillColor:[255,255,255],textColor:ink,fontStyle:"bold",fontSize:10,lineWidth:{top:1},lineColor:ink},
+      columnStyles:{0:{cellWidth:"auto"},1:{cellWidth:38,halign:"center"},2:{cellWidth:74,halign:"right"},3:{cellWidth:84,halign:"right"}},
+      didParseCell:d=>{ if(d.column.index>=2) d.cell.styles.font="courier"; if(d.section==="body"&&d.column.index===3&&parseFloat(String(d.cell.raw).replace(/[^0-9.\-]/g,""))<0) d.cell.styles.textColor=[200,30,30]; } });
+    y=doc.lastAutoTable.finalY+18;
+  }
+  const monthlyRows=lines(p=>p.type==="monthly").concat(
+    Object.keys(state.cart).filter(id=>{const p=getProduct(id);return p&&p.type!=="monthly"&&p.recurring>0;})
+      .map(id=>{const p=getProduct(id),q=state.cart[id];return [p.name+(p.recFirstOnly?" — monthly fee (flat)":" — monthly fee"),p.recFirstOnly?"1":String(q),fmt(p.recurring),fmt(recAmount(p,q))];}));
+  table("Monthly Recurring Services",monthlyRows,blue,c.monthly!==0?[["Monthly total","","",fmt(c.monthly)+" /mo"]]:null);
+  const eq=lines(p=>p.type==="onetime");
+  if(eq.length){
+    const f=[]; f.push([{content:"Subtotal",colSpan:3,styles:{halign:"right",fontStyle:"normal",textColor:muted}},fmt(c.equipSub)]);
+    if(c.equipDiscount>0) f.push([{content:"Discount ("+state.disc+"%)",colSpan:3,styles:{halign:"right",fontStyle:"normal",textColor:[200,30,30]}},"-"+fmt(c.equipDiscount)]);
+    f.push([{content:"Sales tax ("+(+state.taxRate).toFixed(2)+"%)",colSpan:3,styles:{halign:"right",fontStyle:"normal",textColor:muted}},fmt(c.tax)]);
+    f.push([{content:"Equipment total",colSpan:3,styles:{halign:"right"}},fmt(c.equipTotal)]);
+    table("One-Time Equipment",eq,amber,f);
+  }
+  table("Programming / Inventory / Training",lines(p=>p.type==="prog"),amber,c.progTotal!==0?[["Setup total","","",fmt(c.progTotal)]]:null);
+
+  ensureSpace(doc,()=>y,v=>y=v,110);
+  doc.setDrawColor(...ink); doc.setLineWidth(1.4); doc.line(M,y,W-M,y); y+=20;
+  doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...ink); doc.text("One-Time Investment",M,y);
+  doc.setFont("courier","bold"); doc.text(fmt(c.oneTimeGrand),W-M,y,{align:"right"}); y+=20;
+  if(c.monthly!==0){ doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...blue); doc.text("Monthly Recurring",M,y);
+    doc.setFont("courier","bold"); doc.text(fmt(c.monthly)+" /mo",W-M,y,{align:"right"}); y+=18; }
+  if(state.lease && c.taxedBase>0){ doc.setFont("helvetica","italic"); doc.setFontSize(9.5); doc.setTextColor(...muted);
+    doc.text(`Estimated ${LEASE_MONTHS}-mo equipment lease: ${fmt(c.lease)}/mo. Payments may vary based on creditworthiness; business must be operating at least 1 year to apply. Lease does not include Programming/Inventory/Training.`,M,y,{maxWidth:W-2*M}); y+=34; } else y+=8;
+
+  ensureSpace(doc,()=>y,v=>y=v,130); y+=6;
+  doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...muted); doc.text("ACCEPTANCE",M,y); y+=12;
+  // Signature box to draw/sign in
+  const sigH=46;
+  doc.setDrawColor(...muted); doc.setLineWidth(.8);
+  doc.roundedRect(M,y,W-2*M,sigH,4,4,"S");
+  let sigFieldAdded=false;
+  try{
+    const sigF=new doc.AcroFormTextField();
+    sigF.Rect=[M+2,y+2,W-2*M-4,sigH-4]; sigF.fieldName="signature"; sigF.fontSize=14; sigF.multiline=false;
+    doc.addField(sigF); sigFieldAdded=true;
+  }catch(e){ console.warn("signature field unavailable",e); }
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...muted);
+  doc.text("Signature — draw or type above",M+2,y+sigH+11);
+  y+=sigH+24;
+  // Printed name + Date fillable fields
+  const fh=20, half=(W-2*M-24)/2, dateX=M+half+24;
+  doc.setDrawColor(...muted); doc.setLineWidth(.8);
+  doc.line(M,y+fh,M+half,y+fh); doc.line(dateX,y+fh,W-M,y+fh);
+  try{
+    const nameF=new doc.AcroFormTextField();
+    nameF.Rect=[M,y,half,fh]; nameF.fieldName="printed_name"; nameF.fontSize=11;
+    doc.addField(nameF);
+    const dateF=new doc.AcroFormTextField();
+    dateF.Rect=[dateX,y,half,fh]; dateF.fieldName="acceptance_date"; dateF.fontSize=11;
+    doc.addField(dateF);
+  }catch(e){ console.warn("text fields unavailable",e); }
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...muted);
+  doc.text("Printed name",M,y+fh+11); doc.text("Date",dateX,y+fh+11);
+  y+=fh+30;
+  doc.setFont("helvetica","bolditalic"); doc.setFontSize(10.5); doc.setTextColor(...teal);
+  doc.text("Ask me how we can save you money on your processing fees!",W/2,y,{align:"center"});
+
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){ doc.setPage(i); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...muted);
+    doc.text("Card Systems · EdgeServ Proposal",M,doc.internal.pageSize.getHeight()-22);
+    doc.text(`Page ${i} of ${pages}`,W-M,doc.internal.pageSize.getHeight()-22,{align:"right"}); }
+  doc.save((state.cust?state.cust.replace(/[^\w]+/g,"_"):"EdgeServ")+"_Proposal.pdf"); toast("Proposal PDF created");
+}
+function fmt(n){ return (n<0?"-$":"$")+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function ensureSpace(doc,getY,setY,need){ const H=doc.internal.pageSize.getHeight(); if(getY()+need>H-50){ doc.addPage(); setY(60);} }
+
+/* ---------------- HYDRATE ---------------- */
+function hydrate(){
+  document.getElementById("custName").value=state.cust||"";
+  document.getElementById("prepBy").value=state.prep||"";
+  document.getElementById("propDate").value=state.date||new Date().toISOString().slice(0,10);
+  if(!state.date) state.date=document.getElementById("propDate").value;
+  document.getElementById("discSelect").value=state.disc||0;
+  document.getElementById("leaseToggle").checked=!!state.lease;
+  applyTheme(); buildTaxSelect(); renderNav(); renderCatalog(); renderCart();
+}
+hydrate();
+</script>
+</body>
+</html>
