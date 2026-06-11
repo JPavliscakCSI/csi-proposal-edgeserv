@@ -74,6 +74,7 @@ body.admin .editbanner{display:block}
 .shell{max-width:1400px;margin:16px auto 120px;padding:0 20px;display:grid;grid-template-columns:1fr 388px;gap:22px;align-items:start}
 
 .catnav{position:sticky;top:70px;background:var(--canvas);padding:8px 0 10px;z-index:20;display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
+body.listview .catnav{position:static;top:auto;z-index:auto}
 .chip{background:var(--surface);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700}
 .chip:hover{color:var(--ink);border-color:var(--line-strong)}
 .chip.active{background:var(--ink);color:var(--surface);border-color:var(--ink)}
@@ -86,6 +87,35 @@ body.admin .editbanner{display:block}
 .catsection h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
 
+.ltable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.ltable thead th{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);text-align:left;padding:11px 12px;border-bottom:1.5px solid var(--line-strong);background:var(--surface-2);position:sticky;top:64px;z-index:15}
+.ltable thead th:first-child{border-top-left-radius:12px}
+.ltable thead th:last-child{border-top-right-radius:12px}
+.ltable th.c-qty,.ltable th.c-unit,.ltable th.c-ext{text-align:right}
+.ltable td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.ltable tr:last-child td{border-bottom:none}
+.ltable .lcat td{background:var(--ink);color:var(--surface);font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:8px 12px;position:sticky;top:103px;z-index:12}
+[data-theme="dark"] .ltable .lcat td{background:var(--surface-2);color:var(--primary-ink)}
+.ltable .litem-row.on{background:var(--primary-soft)}
+.ltable .litem-row.on .c-ext{color:var(--primary-ink);font-weight:800}
+.ltable .c-item{width:auto}
+.ltable .c-qty{width:84px;text-align:right}
+.ltable .c-unit{width:108px;text-align:right;font-weight:700}
+.ltable .c-ext{width:128px;text-align:right;font-weight:800}
+.ltable .c-ext.neg{color:var(--danger)}
+.ltable .rname{font-size:13.5px;font-weight:700}
+.ltable .rtag{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:1px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
+.ltable .rtag.req{background:var(--primary-soft);color:var(--primary-ink)}
+.ltable .rtag.mo{background:var(--monthly-soft);color:var(--monthly)}
+.ltable .rnote{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.ltable .rnote.rec{color:var(--monthly);font-weight:800}
+.ltable .rnote.warn{color:var(--danger);font-weight:800}
+.ltable .qin{width:64px;background:var(--cream);border:1px solid var(--line-strong);border-radius:7px;padding:7px 8px;font-size:16px;font-weight:800;text-align:center;font-family:var(--mono)}
+.ltable .qin:focus{outline:2px solid var(--primary);border-color:transparent}
+.ltable .editrow{display:none;width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:12px;padding:0;margin-right:8px;vertical-align:middle}
+body.admin .ltable .editrow{display:inline-grid;place-items:center}
+.ltable .editrow:hover{color:var(--ink);border-color:var(--line-strong)}
+
 .pcard{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow);transition:border-color .15s}
 .pcard:hover{border-color:var(--line-strong)}
 .pcard.incart{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary),var(--shadow)}
@@ -93,6 +123,7 @@ body.admin .editbanner{display:block}
 .tag.monthly{background:var(--monthly-soft);color:var(--monthly)}
 .tag.onetime{background:var(--onetime-soft);color:var(--onetime)}
 .tag.credit{background:#fde8e8;color:var(--danger)}
+.tag.req{background:var(--primary-soft);color:var(--primary-ink)}
 [data-theme="dark"] .tag.credit{background:#3a1414}
 .pcard .pname{font-size:14px;font-weight:700;line-height:1.3;padding-right:24px}
 .pcard .pnote{font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:-4px}
@@ -242,6 +273,7 @@ body.admin .pencil{display:grid}
       <button class="tbtn dark" id="addItemBtn" style="display:none">＋ Add item</button>
       <button class="tbtn" id="pinMgrBtn" style="display:none">🔑 PIN</button>
       <button class="tbtn" id="lockBtn" style="display:none">🔓 Editing — lock</button>
+      <button class="tbtn" id="viewBtn" title="Switch layout">☰ <span>List</span></button>
       <button class="tbtn" id="themeBtn" title="Toggle theme">🌙 <span>Dark</span></button>
       <button class="tbtn" id="resetBtn" title="Clear everything">↺ Reset</button>
     </div>
@@ -360,7 +392,7 @@ const DEFAULT_CATALOG = [
    {n:"Text Messaging — Low Plan", p:20, note:"500 messages / month"},
    {n:"Kitchen Hub — Delivery App Integration", p:69.95, note:"Uber Eats, DoorDash, etc."},
    {n:"Redundancy Package", p:45, note:"Battery backup + wireless internet failover"},
-   {n:"Merchant Processing Discount (each)", p:-10, credit:true, max:4, note:"Up to 4 — applied to monthly"},
+   {n:"Merchant Processing Discount (each)", p:-10, credit:true, max:4, qtyControlled:true, note:"Up to 4 — applied to monthly"},
  ]},
  {cat:"Back Office Hardware", type:"onetime", items:[
    {n:"Linux Server — Beelink 32GB", p:506.20},
@@ -468,12 +500,13 @@ function seedCatalog(){
   return DEFAULT_CATALOG.map((sec,si)=>({cat:sec.cat, items:sec.items.map((it,ii)=>({
     id:"i_"+si+"_"+ii, name:it.n, price:it.p, p2:(it.p2!=null?it.p2:null),
     type:sec.type, credit:!!it.credit, noDiscount:!!sec.noDiscount,
-    max:it.max||null, note:it.note||"", tiered:!!it.tiered, recurring:(it.recurring!=null?it.recurring:0), recFirstOnly:!!it.recFirstOnly
+    max:it.max||null, note:it.note||"", tiered:!!it.tiered, recurring:(it.recurring!=null?it.recurring:0), recFirstOnly:!!it.recFirstOnly,
+    qtyControlled:!!it.qtyControlled, mandatory:!!it.mandatory, min:(it.min||0)
   }))}));
 }
 
 const LS = "edgeserv_webstore_v1";
-let state = {cust:"",prep:"",date:"",cart:{},catalog:null,tax:0,taxRate:6.5,disc:0,lease:false,theme:"light",pin:DEFAULT_PIN};
+let state = {cust:"",prep:"",date:"",cart:{},catalog:null,tax:0,taxRate:6.5,disc:0,lease:false,theme:"light",view:"tiles",pin:DEFAULT_PIN};
 let adminUnlocked = false;
 function loadState(){ try{const s=JSON.parse(localStorage.getItem(LS)); if(s) state=Object.assign(state,s);}catch(e){} }
 function saveState(){ try{localStorage.setItem(LS, JSON.stringify(state));}catch(e){} }
@@ -497,6 +530,16 @@ function extPrice(p,q){
 }
 function overLimit(p,q){ return p.tiered && q>POS_TIER_LIMIT; }
 function recAmount(p,q){ if(!(p.recurring>0)||p.type==="monthly") return 0; return p.recFirstOnly ? p.recurring : p.recurring*q; }
+function qMin(p){ return p.qtyControlled ? (p.mandatory ? Math.max(1,p.min||1) : (p.min||0)) : 0; }
+function qMax(p){ return p.max||0; }
+function ensureMandatory(){
+  state.catalog.forEach(s=>s.items.forEach(p=>{
+    if(p.qtyControlled && p.mandatory){
+      const need=Math.max(1,p.min||1), cur=state.cart[p.id]||0;
+      if(cur<need) state.cart[p.id]=qMax(p)?Math.min(need,qMax(p)):need;
+    }
+  }));
+}
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 /* ---------------- CATALOG RENDER ---------------- */
@@ -514,6 +557,8 @@ function renderNav(){
 }
 function renderCatalog(){
   const root=document.getElementById("catalog"); root.innerHTML="";
+  document.body.classList.toggle("listview", state.view==="list");
+  if(state.view==="list"){ renderListView(root); return; }
   const term=searchTerm.trim().toLowerCase();
   state.catalog.forEach(sec=>{
     if(activeCat!=="all" && sec.cat!==activeCat && !term) return;
@@ -527,6 +572,47 @@ function renderCatalog(){
   });
   if(!root.children.length){ root.innerHTML='<div class="empty panel" style="margin-top:8px">No products match your search.</div>'; }
 }
+function renderListView(root){
+  const term=searchTerm.trim().toLowerCase();
+  const tbl=document.createElement("table"); tbl.className="ltable";
+  tbl.innerHTML=`<thead><tr><th class="c-item">Item</th><th class="c-qty">Qty</th><th class="c-unit">Unit Price</th><th class="c-ext">Extended Price</th></tr></thead>`;
+  const tb=document.createElement("tbody"); let rows=0;
+  state.catalog.forEach(sec=>{
+    if(activeCat!=="all" && sec.cat!==activeCat && !term) return;
+    const matches=sec.items.filter(it=>!term || it.name.toLowerCase().includes(term) || (it.note||"").toLowerCase().includes(term));
+    if(!matches.length) return;
+    const ch=document.createElement("tr"); ch.className="lcat";
+    ch.innerHTML=`<td colspan="4">${esc(sec.cat)}</td>`; tb.appendChild(ch);
+    matches.forEach(p=>{ tb.appendChild(listRow(p)); rows++; });
+  });
+  if(!rows){ root.innerHTML='<div class="empty panel" style="margin-top:8px">No products match your search.</div>'; return; }
+  tbl.appendChild(tb); root.appendChild(tbl);
+}
+function listRow(prod){
+  const q=state.cart[prod.id]||0;
+  const unitPrice=(prod.tiered && q>4)?(prod.p2!=null?prod.p2:POS_TIER2):prod.price;
+  const ext=q>0?extPrice(prod,q):0;
+  const tr=document.createElement("tr"); tr.className="litem-row"+(q>0?" on":"");
+  const badges=[];
+  if(prod.qtyControlled&&prod.mandatory) badges.push('<span class="rtag req">Required</span>');
+  if(prod.type==="monthly") badges.push('<span class="rtag mo">Monthly</span>');
+  let sub=prod.note?`<span class="rnote">${esc(prod.note)}</span>`:"";
+  if(prod.recurring>0&&prod.type!=="monthly") sub+=`<span class="rnote rec">+ ${money(prod.recurring)}/mo${prod.recFirstOnly?" (flat)":" each"}</span>`;
+  if(overLimit(prod,q)) sub+=`<span class="rnote warn">Unlimited license recommended</span>`;
+  const name=document.createElement("td"); name.className="c-item";
+  name.innerHTML=`<button class="editrow" title="Edit item">✎</button><span class="rname">${esc(prod.name)}</span> ${badges.join(" ")}${sub}`;
+  name.querySelector(".editrow").onclick=e=>{e.stopPropagation();openEditModal(prod.id);};
+  const qtyTd=document.createElement("td"); qtyTd.className="c-qty";
+  const inp=document.createElement("input"); inp.type="number"; inp.className="qin"; inp.value=q||0;
+  inp.min=qMin(prod)||0; if(qMax(prod)) inp.max=qMax(prod);
+  if(prod.qtyControlled&&prod.mandatory) inp.min=Math.max(1,prod.min||1);
+  inp.onchange=()=>setQty(prod.id, parseInt(inp.value,10)||0);
+  qtyTd.appendChild(inp);
+  const unitTd=document.createElement("td"); unitTd.className="c-unit num"; unitTd.textContent=money(unitPrice)+(prod.type==="monthly"?"/mo":"");
+  const extTd=document.createElement("td"); extTd.className="c-ext num"+(ext<0?" neg":""); extTd.textContent=money(ext)+(prod.type==="monthly"&&ext!==0?"/mo":"");
+  tr.append(name,qtyTd,unitTd,extTd);
+  return tr;
+}
 function makeCard(prod){
   const q=state.cart[prod.id]||0, inCart=q>0;
   const card=document.createElement("div"); card.className="pcard"+(inCart?" incart":"");
@@ -537,6 +623,7 @@ function makeCard(prod){
   card.innerHTML=`
     <button class="pencil" title="Edit item">✎</button>
     <span class="tag ${tagClass}">${tagText}</span>
+    ${(prod.qtyControlled&&prod.mandatory)?`<span class="tag req">Required</span>`:""}
     <div class="pname">${esc(prod.name)}</div>
     ${prod.note?`<div class="pnote">${esc(prod.note)}</div>`:""}
     ${overLimit(prod,q)?`<div class="warn">Unlimited license recommended</div>`:""}
@@ -550,7 +637,7 @@ function makeCard(prod){
   slot.appendChild(inCart?makeStepper(prod):makeAdd(prod));
   return card;
 }
-function makeAdd(prod){ const b=document.createElement("button"); b.className="addbtn"; b.textContent="Add"; b.onclick=()=>setQty(prod.id,1); return b; }
+function makeAdd(prod){ const b=document.createElement("button"); b.className="addbtn"; b.textContent="Add"; b.onclick=()=>setQty(prod.id,qMin(prod)||1); return b; }
 function makeStepper(prod){
   const s=document.createElement("div"); s.className="stepper";
   const m=document.createElement("button"); m.textContent="–"; m.onclick=()=>setQty(prod.id,(state.cart[prod.id]||0)-1);
@@ -560,7 +647,10 @@ function makeStepper(prod){
 }
 function setQty(id,q){
   const prod=getProduct(id); if(!prod) return;
-  if(prod.max) q=Math.min(q,prod.max);
+  const mx=qMax(prod), mn=qMin(prod);
+  if(mx) q=Math.min(q,mx);
+  if(prod.qtyControlled && prod.mandatory){ q=Math.max(q, Math.max(1,prod.min||1)); }
+  else if(q>0 && mn && q<mn){ q=0; }   // stepping below the minimum removes a non-mandatory item
   q=Math.max(0,q);
   if(q===0) delete state.cart[id]; else state.cart[id]=q;
   saveState(); renderCatalog(); renderCart();
@@ -747,6 +837,14 @@ function openItemModal(id){
           <label class="mradio"><input type="radio" name="recMode" value="first" ${(editing&&p.recFirstOnly)?"checked":""}><span>First only &mdash; one charge no matter the quantity</span></label>
         </div>
       </div>
+      <div class="mfld"><label class="mcheck"><input type="checkbox" id="iQtyChk" ${(editing&&p.qtyControlled)?"checked":""}><span class="mc-tx">Quantity controlled<em>Require the item and/or cap how many can be added.</em></span></label></div>
+      <div id="qtyBlock">
+        <div class="mfld"><label class="mcheck"><input type="checkbox" id="iMand" ${(editing&&p.mandatory)?"checked":""}><span class="mc-tx">Mandatory<em>Always included on the proposal; can't be removed.</em></span></label></div>
+        <div class="mgrid2">
+          <div class="mfld"><label>Minimum qty</label><input type="number" step="1" min="0" id="iMin" value="${(editing&&p.min)?p.min:""}" placeholder="0"></div>
+          <div class="mfld"><label>Maximum qty</label><input type="number" step="1" min="0" id="iMax" value="${(editing&&p.max)?p.max:""}" placeholder="none"></div>
+        </div>
+      </div>
       <div class="merr" id="iErr"></div>
     </div>
     <div class="modal-f">
@@ -761,7 +859,7 @@ function openItemModal(id){
     csel.onchange=()=>{ wrap.style.display=csel.value==="__new__"?"":"none"; };
     document.getElementById("iRestore").onclick=()=>{
       if(confirm("Restore all items and prices to defaults? Your price edits and added items will be lost.")){
-        state.catalog=seedCatalog(); state.cart={}; saveState(); closeModal(); renderNav(); renderCatalog(); renderCart(); toast("Catalog restored to defaults");
+        state.catalog=seedCatalog(); state.cart={}; saveState(); ensureMandatory(); closeModal(); renderNav(); renderCatalog(); renderCart(); toast("Catalog restored to defaults");
       }
     };
   }
@@ -771,6 +869,9 @@ function openItemModal(id){
   recChk.onchange=syncRec; syncRec();
   const monthlyChk=document.getElementById("iMonthly");
   if(monthlyChk){ monthlyChk.onchange=()=>{ document.getElementById("recBlock").style.display=monthlyChk.checked?"none":""; }; }
+  const qtyChk=document.getElementById("iQtyChk");
+  const syncQty=()=>{ document.getElementById("qtyBlock").style.display=qtyChk.checked?"":"none"; };
+  qtyChk.onchange=syncQty; syncQty();
   if(editing){
     document.getElementById("iDelete").onclick=()=>{
       if(confirm(`Delete "${p.name}"? This removes it from the catalog.`)){
@@ -794,6 +895,11 @@ function openItemModal(id){
       const recOnE = p.type!=="monthly" && document.getElementById("iRecChk").checked;
       p.recurring = recOnE ? (parseFloat(document.getElementById("iRec").value)||0) : 0;
       p.recFirstOnly = recOnE ? (document.querySelector('input[name="recMode"]:checked').value==="first") : false;
+      const qcE=document.getElementById("iQtyChk").checked;
+      p.qtyControlled=qcE;
+      p.mandatory=qcE && document.getElementById("iMand").checked;
+      p.min=qcE ? (parseInt(document.getElementById("iMin").value,10)||0) : 0;
+      p.max=qcE ? (parseInt(document.getElementById("iMax").value,10)||0) : 0;
       p.credit=price<0;
     } else {
       let catName=document.getElementById("iCat").value;
@@ -804,9 +910,13 @@ function openItemModal(id){
       const recOn = !monthly && document.getElementById("iRecChk").checked;
       const rec = recOn ? (parseFloat(document.getElementById("iRec").value)||0) : 0;
       const recFirst = recOn ? (document.querySelector('input[name="recMode"]:checked').value==="first") : false;
-      sec2.items.push({id:"x"+Date.now()+Math.floor(Math.random()*999),name,price,p2:null,type:monthly?"monthly":"onetime",credit:price<0,noDiscount:false,max:null,note,tiered:false,recurring:rec,recFirstOnly:recFirst});
+      const qc=document.getElementById("iQtyChk").checked;
+      const qcMand=qc && document.getElementById("iMand").checked;
+      const qcMin=qc ? (parseInt(document.getElementById("iMin").value,10)||0) : 0;
+      const qcMax=qc ? (parseInt(document.getElementById("iMax").value,10)||0) : 0;
+      sec2.items.push({id:"x"+Date.now()+Math.floor(Math.random()*999),name,price,p2:null,type:monthly?"monthly":"onetime",credit:price<0,noDiscount:false,max:qcMax,note,tiered:false,recurring:rec,recFirstOnly:recFirst,qtyControlled:qc,mandatory:qcMand,min:qcMin});
     }
-    saveState(); closeModal(); renderNav(); renderCatalog(); renderCart(); toast(editing?"Item updated":"Item added");
+    saveState(); ensureMandatory(); closeModal(); renderNav(); renderCatalog(); renderCart(); toast(editing?"Item updated":"Item added");
   };
 }
 
@@ -828,6 +938,8 @@ document.getElementById("propDate").onchange=e=>{state.date=e.target.value;saveS
 function applyTheme(){ document.documentElement.setAttribute("data-theme",state.theme);
   document.getElementById("themeBtn").innerHTML=state.theme==="dark"?'☀️ <span>Light</span>':'🌙 <span>Dark</span>'; }
 document.getElementById("themeBtn").onclick=()=>{ state.theme=state.theme==="dark"?"light":"dark"; applyTheme(); saveState(); };
+function updateViewBtn(){ document.getElementById("viewBtn").innerHTML=state.view==="list"?'▦ <span>Tiles</span>':'☰ <span>List</span>'; }
+document.getElementById("viewBtn").onclick=()=>{ state.view=state.view==="list"?"tiles":"list"; saveState(); updateViewBtn(); renderCatalog(); };
 
 document.getElementById("resetBtn").onclick=()=>{
   if(!confirm("Clear the current build, customer info, and tax/discount settings? (Your catalog edits are kept.)")) return;
@@ -958,6 +1070,8 @@ function hydrate(){
   if(!state.date) state.date=document.getElementById("propDate").value;
   document.getElementById("discSelect").value=state.disc||0;
   document.getElementById("leaseToggle").checked=!!state.lease;
+  if(!state.view) state.view="tiles";
+  ensureMandatory(); updateViewBtn();
   applyTheme(); buildTaxSelect(); renderNav(); renderCatalog(); renderCart();
 }
 hydrate();
